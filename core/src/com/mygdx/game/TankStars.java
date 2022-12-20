@@ -10,12 +10,14 @@ public class TankStars extends Game {
 
     public SpriteBatch batch;
     public SpriteBatch batch2;
-
+public SpriteBatch batch3;
     @Override
     public void create () {
 //		this.create();
         batch = new SpriteBatch();
         batch2 = new SpriteBatch();
+        batch3=new SpriteBatch();
+
         this.setScreen(new SplashScreen(this));
     }
 
@@ -28,6 +30,7 @@ public class TankStars extends Game {
     public void dispose () {
         batch.dispose();
         batch2.dispose();
+        batch3.dispose();
 
     }
 }

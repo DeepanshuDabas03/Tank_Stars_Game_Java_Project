@@ -74,7 +74,7 @@ public class SplashScreen implements Screen {
         boolean shouldRender = (upgrade<=900);
 
         if (shouldRender) {
-            upgrade+=3;
+            upgrade+=50;
             Gdx.graphics.requestRendering();}
 
 

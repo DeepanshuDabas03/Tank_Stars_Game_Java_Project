@@ -13,4 +13,5 @@ public class DesktopLauncher {
 		config.setTitle("Tank Stars");
 		new Lwjgl3Application(new TankStars(), config);
 	}
+
 }

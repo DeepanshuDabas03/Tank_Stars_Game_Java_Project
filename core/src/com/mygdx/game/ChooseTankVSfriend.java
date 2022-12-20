@@ -110,7 +110,7 @@ public class ChooseTankVSfriend implements Screen {
         play.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event,float x,float y){
-                game.setScreen(new BattleArena(game,1));
+                game.setScreen(new BattleArena(game,1,tank1,tank2));
             }
         });
 
@@ -134,9 +134,7 @@ public class ChooseTankVSfriend implements Screen {
             }
         });
 
-        Button upgrade=new TextButton("Upgrade",skin,"small");
-        upgrade.setSize(200f,75f);
-        upgrade.setPosition(750f,50f);
+
 
         ImageButton left=new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("back.png")))));
 
@@ -171,7 +169,7 @@ public class ChooseTankVSfriend implements Screen {
         stage.addActor(p1);
         stage.addActor(p2);
         stage.addActor(play);
-        stage.addActor(upgrade);
+//        stage.addActor(upgrade);
         stage.addActor(left);
         stage.addActor(right);
 
@@ -235,7 +233,10 @@ public class ChooseTankVSfriend implements Screen {
     public void show() {
 
     }
+    public void inputshandler(float dt){
+//        if (Gdx.)
 
+    }
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0,0,0.2f,1);

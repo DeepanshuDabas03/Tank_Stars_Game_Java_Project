@@ -1,127 +1,466 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.objects.PolygonMapObject;
+import com.badlogic.gdx.maps.objects.PolylineMapObject;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-public class BattleArena implements Screen {
+public class BattleArena implements Screen, InputProcessor {
 
     TankStars game;
+    int count;
+    Music mus;
+    boolean turn=true;
+    private Tank player1;
+    private Tank player2;
+    private TiledMap map;
+    private OrthogonalTiledMapRenderer rendered;
     OrthographicCamera camera;
     Sprite sprite;
     Stage stage;
-    static Image p1tank = null;
-    static Image p2tank=null;
+    Image p1tank = new Image(new Texture("Tanks/Abrams.png"));
+    Image p2tank=new Image(new Texture("Tanks/Abrams2.png"));
+    int ismenu=0;
+    int isheal=1;
+    int isterrain=1;
+    ShapeRenderer bg1;
 
+    ShapeRenderer bg2;
+    private World world;
 
+    public World getWorld() {
+        return world;
+    }
+
+    private Box2DDebugRenderer b2dr;
+
+    float health1=300f,health2=330f;
 
 
     Viewport viewport;
-    final float GAME_WIDTH= 192;
-    final float GAME_HEIGHT= 100;
+    final float GAME_WIDTH= 1920;
+    final float GAME_HEIGHT= 1000;
     private Skin skin;
+    ShapeRenderer h1,h2;
+    ShapeRenderer nh1,nh2;
+    ShapeRenderer fuel;
 
-    public BattleArena(TankStars game, int mode) {
+    public BattleArena(final TankStars game, int mode, int tank1, int tank2) {
+        //Vsfriend
         this.game = game;
+
+
+
+
+        bg1=new ShapeRenderer();
+        bg2=new ShapeRenderer();
+        h1=new ShapeRenderer();
+        h2=new ShapeRenderer();
+        nh1=new ShapeRenderer();
+        nh2=new ShapeRenderer();
+        fuel=new ShapeRenderer();
         sprite=new Sprite(new Texture(Gdx.files.internal("BlueNight.png")));
         sprite.setPosition(0,0);
         sprite.setSize(GAME_WIDTH,GAME_HEIGHT);
-        Image terrain =new Image(new Texture(Gdx.files.internal("terrain.png")));
-        terrain.setPosition(-10f,0f);
-        terrain.setSize(1200,600f);
+
+//        Image terrain =new Image(new Texture(Gdx.files.internal("terrain.png")));
+//        terrain.setPosition(-10f,0f);
+//        terrain.setSize(1200,600f);
         stage=new Stage(new ScreenViewport());
 
         Gdx.input.setInputProcessor(stage);
 
 //        float aspectRatio=(float)Gdx.graphics.getHeight()/(float)Gdx.graphics.getWidth();
-        camera = new OrthographicCamera();
-        viewport=new StretchViewport(GAME_WIDTH,GAME_HEIGHT,camera);
+        camera = new OrthographicCamera(GAME_WIDTH,GAME_HEIGHT);
+//        viewport=new StretchViewport(GAME_WIDTH,GAME_HEIGHT,camera);
 //        viewport=new ScreenViewport();
-        viewport.apply();
+//        viewport.apply();
 
 //        camera.setToOrtho(false,800,400);
+        world=new World(new Vector2(0,-800),true);
+        b2dr=new Box2DDebugRenderer();
+        vsfriendTanks(tank1,tank2);
+
+        player1=new Tank(this,1);
+        player2=new Tank(this,2);
+
+        BodyDef bdef=new BodyDef();
+        PolygonShape shape=new PolygonShape();
+        FixtureDef fdef =new FixtureDef();
+        Body body;
+        map=new TmxMapLoader().load("Terraintile.tmx");
+        rendered=new OrthogonalTiledMapRenderer(map);
+        for (MapObject object: map.getLayers().get(1).getObjects().getByType(RectangleMapObject.class)){
+            Rectangle rect=((RectangleMapObject) object).getRectangle();
+            bdef.type=BodyDef.BodyType.StaticBody;
+            bdef.position.set(rect.getX()+rect.getWidth()/2,rect.getY()+rect.getHeight()/2);
+            body=world.createBody(bdef);
+            shape.setAsBox(rect.getWidth()/2,rect.getHeight()/2);
+            fdef.shape=shape;
+            body.createFixture(fdef);
+        }
+
         camera.position.set(GAME_WIDTH/2,GAME_HEIGHT/2,0);
         skin=new Skin(Gdx.files.internal("skin/glassy-ui.json"));
-
+        Label fueltag=new Label("Fuel",skin);
+        fueltag.setFontScale(0.6f);
+        fueltag.setPosition(80f,95f);
         Image menu =new Image(new Texture(Gdx.files.internal("menu.png")));
         menu.setSize(60,60);
         menu.setPosition(32,525);
+        menu.addListener(new ClickListener(){
+           @Override
+           public void clicked(InputEvent event, float x, float y){
+               ismenu=1;
+               isheal=0;
+               isterrain=0;
+               final Image placeholder=new Image(new Texture(Gdx.files.internal("placeholder.jpg")));
+               placeholder.setPosition((Gdx.graphics.getWidth()-500)/2,0);
+               stage.addActor(placeholder);
 
-//        Adding tanks
-//        if (mode==1){
-//
-//            vsfriendTanks(new ChooseTankVSfriend(game));
-//        }
-//        else vscompTanks(new ChooseTankVScomp(game));
+               final Group group=new Group();
 
-        stage.addActor(terrain);
+               Label label=new Label("Settings",skin);
+               label.setFontScale(1.5f);
+               label.setPosition(500f,570f);
+
+               Button resume=new TextButton(" Resume ",skin,"small");
+               resume.setPosition(420,490);
+               resume.setSize(250,60);
+               resume.addListener(new ClickListener(){
+                   @Override
+                   public void clicked(InputEvent event,float x,float y){
+                       ismenu=0;
+                       isheal=1;
+                       isterrain=1;
+                       group.setPosition(1000f,0);
+                       placeholder.setPosition(100000f,0f);
+
+                   }
+               });
+
+               Button save=new TextButton(" Save Game ",skin,"small");
+               save.setPosition(420,400);
+               save.setSize(250,60);
+               Button sound=new TextButton(" Sound : ON ",skin,"small");
+               sound.setPosition(420,320);
+               sound.setSize(250,60);
+               Button music=new TextButton(" Music : ON ",skin,"small");
+               music.setPosition(420,240);
+               music.setSize(250,60);
+               Button returnmenu=new TextButton(" Main menu ",skin,"small");
+               returnmenu.setPosition(420,160);
+               returnmenu.setSize(250,60);
+               returnmenu.addListener(new ClickListener(){
+                   @Override
+                   public void clicked(InputEvent event,float x,float y){
+                       game.setScreen(new MainScreen(game));
+
+                   }
+               });
+
+
+               group.addActor(label);
+               group.addActor(resume);
+               group.addActor(save);
+               group.addActor(sound);
+               group.addActor(music);
+               group.addActor(returnmenu);
+
+
+               stage.addActor(group);
+           }
+        });
+
+
+
+
+
+//        stage.addActor(terrain);
+        stage.addActor(fueltag);
 //        stage.addActor(this.p1tank);
 //        stage.addActor(this.p2tank);
         stage.addActor(menu);
 
     }
 
+    public BattleArena(final TankStars game,int tank1, int tank2) {
+        this.game = game;
+        bg1=new ShapeRenderer();
+        bg2=new ShapeRenderer();
+        h1=new ShapeRenderer();
+        h2=new ShapeRenderer();
+        nh1=new ShapeRenderer();
+        nh2=new ShapeRenderer();
+        fuel=new ShapeRenderer();
+        sprite=new Sprite(new Texture(Gdx.files.internal("BlueNight.png")));
+        sprite.setPosition(0,0);
+        sprite.setSize(GAME_WIDTH,GAME_HEIGHT);
+//        Image terrain =new Image(new Texture(Gdx.files.internal("terrain.png")));
+//        terrain.setPosition(-10f,0f);
+//        terrain.setSize(1200,600f);
+        stage=new Stage(new ScreenViewport());
+
+        Gdx.input.setInputProcessor(stage);
+
+//        float aspectRatio=(float)Gdx.graphics.getHeight()/(float)Gdx.graphics.getWidth();
+        camera = new OrthographicCamera(GAME_WIDTH,GAME_HEIGHT);
+//        viewport=new StretchViewport(GAME_WIDTH,GAME_HEIGHT,camera);
+//        viewport=new ScreenViewport();
+//        viewport.apply();
+
+//        camera.setToOrtho(false,800,400);
+        world=new World(new Vector2(0,-800),true);
+        b2dr=new Box2DDebugRenderer();
+        vscompTanks(tank1,tank2);
+
+        player1=new Tank(this,1);
+        player2=new Tank(this,2);
+
+        BodyDef bdef=new BodyDef();
+        PolygonShape shape=new PolygonShape();
+        FixtureDef fdef =new FixtureDef();
+        Body body;
+        map=new TmxMapLoader().load("Terraintile.tmx");
+        rendered=new OrthogonalTiledMapRenderer(map);
+        for (MapObject object: map.getLayers().get(1).getObjects().getByType((RectangleMapObject.class))){
+
+            Rectangle rect=((RectangleMapObject) object).getRectangle();
+            bdef.type=BodyDef.BodyType.StaticBody;
+            bdef.position.set(rect.getX()+rect.getWidth()/2,rect.getY()+rect.getHeight()/2);
+            body=world.createBody(bdef);
+
+            shape.setAsBox(rect.getWidth()/2,rect.getHeight()/2);
+            fdef.shape=shape;
+            body.createFixture(fdef);
+        }
+        camera.position.set(GAME_WIDTH/2,GAME_HEIGHT/2,0);
+        skin=new Skin(Gdx.files.internal("skin/glassy-ui.json"));
+        Label fueltag=new Label("Fuel",skin);
+        fueltag.setFontScale(0.6f);
+        fueltag.setPosition(80f,95f);
+        Image menu =new Image(new Texture(Gdx.files.internal("menu.png")));
+        menu.setSize(60,60);
+        menu.setPosition(32,525);
+        menu.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+                ismenu=1;
+                isheal=0;
+                isterrain=0;
+                final Image placeholder=new Image(new Texture(Gdx.files.internal("placeholder.jpg")));
+                placeholder.setPosition((Gdx.graphics.getWidth()-500)/2,0);
+                stage.addActor(placeholder);
+
+                final Group group=new Group();
+
+                Label label=new Label("Settings",skin);
+                label.setFontScale(1.5f);
+                label.setPosition(500f,570f);
+
+                Button resume=new TextButton(" Resume ",skin,"small");
+                resume.setPosition(420,490);
+                resume.setSize(250,60);
+                resume.addListener(new ClickListener(){
+                    @Override
+                    public void clicked(InputEvent event,float x,float y){
+                        ismenu=0;
+                        isheal=1;
+                        isterrain=1;
+                        group.setPosition(1000f,0);
+                        placeholder.setPosition(100000f,0f);
+
+                    }
+                });
+
+                Button save=new TextButton(" Save Game ",skin,"small");
+                save.setPosition(420,400);
+                save.setSize(250,60);
+                Button sound=new TextButton(" Sound : ON ",skin,"small");
+                sound.setPosition(420,320);
+                sound.setSize(250,60);
+                Button music=new TextButton(" Music : ON ",skin,"small");
+                music.setPosition(420,240);
+                music.setSize(250,60);
+                Button returnmenu=new TextButton(" Main menu ",skin,"small");
+                returnmenu.setPosition(420,160);
+                returnmenu.setSize(250,60);
+                returnmenu.addListener(new ClickListener(){
+                    @Override
+                    public void clicked(InputEvent event,float x,float y){
+                        game.setScreen(new MainScreen(game));
+                    }
+                });
+
+
+                group.addActor(label);
+                group.addActor(resume);
+                group.addActor(save);
+                group.addActor(sound);
+                group.addActor(music);
+                group.addActor(returnmenu);
+
+
+                stage.addActor(group);
+            }
+        });
+
+
+
+
+
+//        stage.addActor(terrain);
+        stage.addActor(fueltag);
+//        stage.addActor(this.p1tank);
+//        stage.addActor(this.p2tank);
+        stage.addActor(menu);
+//        map=new TmxMapLoader().load("Terraintile.tmx");
+//        rendered=new OrthogonalTiledMapRenderer(map);
+
+    }
     @Override
     public void show() {
+        mus=Gdx.audio.newMusic(Gdx.files.internal("Music/Gameplay.mp3"));
+        mus.setLooping(true);
+        mus.play();
 
     }
-    public void vsfriendTanks(ChooseTankVSfriend option){
-        if (option.tank1==1){
+    public void inputHandler(){
+        if (turn){
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)){
+                player1.b2body.applyLinearImpulse(new Vector2(0,4f),player1.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+                player1.b2body.applyLinearImpulse(new Vector2(0,-4f),player1.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player1.b2body.getLinearVelocity().x<=2){
+                player1.b2body.applyLinearImpulse(new Vector2(50f,0),player1.b2body.getWorldCenter(),true);
+
+
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player1.b2body.getLinearVelocity().x>=-2){
+                player1.b2body.applyLinearImpulse(new Vector2(-100f,0),player1.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.SPACE)){
+                count++;
+                System.out.println("count1:"+count);
+                if (count==6){turn=!turn; count=0;}
+            }
+
+
+
+
+        }
+        if (!turn){
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)){
+                player2.b2body.applyLinearImpulse(new Vector2(0,4f),player2.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+                player2.b2body.applyLinearImpulse(new Vector2(0,-4f),player2.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player2.b2body.getLinearVelocity().x<=2){
+                player2.b2body.applyLinearImpulse(new Vector2(50f,0),player2.b2body.getWorldCenter(),true);
+
+
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player2.b2body.getLinearVelocity().x>=-2){
+                player2.b2body.applyLinearImpulse(new Vector2(-100f,0),player2.b2body.getWorldCenter(),true);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.SPACE)){
+                count++;
+                System.out.println("count2:"+count);
+
+                if (count==6){turn=!turn; count=0;}
+            }
+
+
+        }
+
+
+
+
+    }
+    public void update(){
+        world.step(1/60f,6,2);
+        inputHandler();
+        player1.update();
+        player2.update();
+
+
+    }
+    public void vsfriendTanks(int tank1,int tank2){
+        if (tank1==1){
             this.p1tank=new Image(new Texture("Tanks/Abrams.png"));
-        } else if (option.tank1==2) {
+        } else if (tank1==2) {
             this.p1tank=new Image(new Texture("Tanks/Frost.png"));
 
-        } else if (option.tank1==3) {
+        } else if (tank1==3) {
             this.p1tank=new Image(new Texture("Tanks/Coalition.png"));
         }
-        this.p1tank.setSize(200f,100f);
-        this.p1tank.setPosition(300f,300f);
+//        this.p1tank.setSize(50f,50f);
+//        this.p1tank.setPosition(115f,115f);
 
-        if (option.tank2==1){
+        if (tank2==1){
             this.p2tank=new Image(new Texture("Tanks/Abrams2.png"));
-        } else if (option.tank2==2) {
+        } else if (tank2==2) {
             this.p2tank=new Image(new Texture("Tanks/Frost2.png"));
 
-        } else if (option.tank2==3) {
+        } else if (tank2==3) {
             this.p2tank=new Image(new Texture("Tanks/Coalition2.png"));
         }
-        this.p2tank.setSize(200f,100f);
-        this.p2tank.setPosition(900f,300f);
-
-
-
+//        this.p2tank.setSize(50f,50f);
+//        this.p2tank.setPosition(1000f,200f);
     }
-    public static void vscompTanks(ChooseTankVScomp option){
-        if (option.tank1==1){
-            p1tank=new Image(new Texture("Tanks/Abrams.png"));
-        } else if (option.tank1==2) {
-            p1tank=new Image(new Texture("Tanks/Frost.png"));
+    public void vscompTanks(int tank1,int tank2){
+        if (tank1==1){
+            this.p1tank=new Image(new Texture("Tanks/Abrams.png"));
+        } else if (tank1==2) {
+            this.p1tank=new Image(new Texture("Tanks/Frost.png"));
 
-        } else if (option.tank1==3) {
-            p1tank=new Image(new Texture("Tanks/Coalition.png"));
+        } else if (tank1==3) {
+            this.p1tank=new Image(new Texture("Tanks/Coalition.png"));
         }
-        p1tank.setSize(200f,100f);
-        p1tank.setPosition(300f,300f);
+//        this.p1tank.setSize(50f,50f);
+//        this.p1tank.setPosition(115f,115f);
 
-        if (option.tank2==1){
-            p2tank=new Image(new Texture("Tanks/Abrams2.png"));
-        } else if (option.tank2==2) {
-            p2tank=new Image(new Texture("Tanks/Frost2.png"));
+        if (tank2==1){
+            this.p2tank=new Image(new Texture("Tanks/Abrams2.png"));
+        } else if (tank2==2) {
+            this.p2tank=new Image(new Texture("Tanks/Frost2.png"));
 
-        } else if (option.tank2==3) {
-            p2tank=new Image(new Texture("Tanks/Coalition2.png"));
+        } else if (tank2==3) {
+            this.p2tank=new Image(new Texture("Tanks/Coalition2.png"));
         }
-        p2tank.setSize(200f,100f);
-        p2tank.setPosition(900f,300f);
+//        this.p2tank.setSize(50f,50f);
+//        this.p2tank.setPosition(1000f,200f);
 
 
 
@@ -130,19 +469,73 @@ public class BattleArena implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0,0,0.2f,1);
+        update();
+
+        b2dr.render(world,camera.combined);
         camera.update();
+
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         sprite.draw(game.batch);
         game.batch.end();
+        if (isterrain==1){
+            rendered.setView(camera);
+            rendered.render();
+        }
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
+        if (isheal==1){
+            h1.begin(ShapeRenderer.ShapeType.Filled);
+            h1.rect(200f,550f,350f,15f);
+            h1.setColor(Color.RED);
+            h1.end();
+            h2.begin(ShapeRenderer.ShapeType.Filled);
+            h2.rect(650f,550f,350f,15f);
+            h2.setColor(Color.RED);
+            h2.end();
+            nh1.begin(ShapeRenderer.ShapeType.Filled);
+            nh1.rect(200f,550f,health1,15f);
+            nh1.setColor(Color.GREEN);
+            nh1.end();
+            nh2.begin(ShapeRenderer.ShapeType.Filled);
+            nh2.rect(650f,550f,health2,15f);
+            nh2.setColor(Color.GREEN);
+            nh2.end();
+        }
+
+        fuel.begin(ShapeRenderer.ShapeType.Filled);
+        fuel.rect(100,100,100,10);
+        fuel.setColor(Color.YELLOW);
+        fuel.end();
+
+        if (ismenu==1){
+            Gdx.graphics.getGL20().glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            bg1.begin(ShapeRenderer.ShapeType.Filled);
+            bg1.rect(0f,0f,290,Gdx.graphics.getHeight());
+
+            bg1.setColor(new Color(0.13f, 0.3f, 0.5f, 0.5f));
+
+
+            bg1.end();
+            bg2.begin(ShapeRenderer.ShapeType.Filled);
+            bg2.rect(790f,0f,290,Gdx.graphics.getHeight());
+
+            bg2.setColor(new Color(0.13f, 0.3f, 0.5f, 0.5f));
+
+
+            bg2.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+
+//        rendered.setView(camera);
+//        rendered.render();
 
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width,height);
+//        viewport.update(width,height);
         camera.position.set(GAME_WIDTH/2,GAME_HEIGHT/2,0);
     }
 
@@ -155,15 +548,61 @@ public class BattleArena implements Screen {
     public void resume() {
 
     }
+    public void update(float delt){
+
+    }
 
     @Override
     public void hide() {
-
+        dispose();
     }
 
     @Override
     public void dispose() {
         sprite.getTexture().dispose();
+        map.dispose();
+        rendered.dispose();
 
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
     }
 }

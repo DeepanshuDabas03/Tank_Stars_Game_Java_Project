@@ -102,13 +102,11 @@ public class ChooseTankVScomp implements Screen {
                 tank1=tanknum;
                 Random ran=new Random();
                 tank2= ran.nextInt(1,4);
-                game.setScreen(new BattleArena(game,0));
+                game.setScreen(new BattleArena(game,tank1,tank2));
             }
         });
 
-        Button upgrade=new TextButton("Upgrade",skin,"small");
-        upgrade.setSize(200f,75f);
-        upgrade.setPosition(750f,50f);
+
 
         ImageButton left=new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("back.png")))));
 
@@ -141,7 +139,7 @@ public class ChooseTankVScomp implements Screen {
         stage.addActor(group1);
         stage.addActor(back);
         stage.addActor(play);
-        stage.addActor(upgrade);
+//        stage.addActor(upgrade);
         stage.addActor(left);
         stage.addActor(right);
 
