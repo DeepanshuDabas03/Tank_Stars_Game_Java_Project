@@ -1,4 +1,6 @@
 package com.mygdx.game;
+import java.lang.*;
+import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -62,7 +64,7 @@ public class BattleArena implements Screen, InputProcessor {
 
     private Box2DDebugRenderer b2dr;
 
-    float health1=300f,health2=330f;
+//    float health1=300f,health2=330f;
 
 
     Viewport viewport;
@@ -72,6 +74,7 @@ public class BattleArena implements Screen, InputProcessor {
     ShapeRenderer h1,h2;
     ShapeRenderer nh1,nh2;
     ShapeRenderer fuel;
+    ArrayList<ShapeRenderer> aims;
 
     public BattleArena(final TankStars game, int mode, int tank1, int tank2) {
         //Vsfriend
@@ -87,6 +90,14 @@ public class BattleArena implements Screen, InputProcessor {
         nh1=new ShapeRenderer();
         nh2=new ShapeRenderer();
         fuel=new ShapeRenderer();
+        aims=new ArrayList<ShapeRenderer>();
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+
         sprite=new Sprite(new Texture(Gdx.files.internal("BlueNight.png")));
         sprite.setPosition(0,0);
         sprite.setSize(GAME_WIDTH,GAME_HEIGHT);
@@ -106,6 +117,7 @@ public class BattleArena implements Screen, InputProcessor {
 
 //        camera.setToOrtho(false,800,400);
         world=new World(new Vector2(0,-800),true);
+        world.setContactListener(new MyContactListener());
         b2dr=new Box2DDebugRenderer();
         vsfriendTanks(tank1,tank2);
 
@@ -221,6 +233,13 @@ public class BattleArena implements Screen, InputProcessor {
         nh1=new ShapeRenderer();
         nh2=new ShapeRenderer();
         fuel=new ShapeRenderer();
+        aims=new ArrayList<ShapeRenderer>();
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
+        aims.add(new ShapeRenderer());
         sprite=new Sprite(new Texture(Gdx.files.internal("BlueNight.png")));
         sprite.setPosition(0,0);
         sprite.setSize(GAME_WIDTH,GAME_HEIGHT);
@@ -239,6 +258,7 @@ public class BattleArena implements Screen, InputProcessor {
 
 //        camera.setToOrtho(false,800,400);
         world=new World(new Vector2(0,-800),true);
+        world.setContactListener(new MyContactListener());
         b2dr=new Box2DDebugRenderer();
         vscompTanks(tank1,tank2);
 
@@ -356,10 +376,15 @@ public class BattleArena implements Screen, InputProcessor {
     public void inputHandler(){
         if (turn){
             if (Gdx.input.isKeyPressed(Input.Keys.UP)){
-                player1.b2body.applyLinearImpulse(new Vector2(0,4f),player1.b2body.getWorldCenter(),true);
+//                player1.b2body.applyLinearImpulse(new Vector2(0,4f),player1.b2body.getWorldCenter(),true);
+                player1.setAngle(player1.getAngle()+0.1f);;
+
+
             }
             if (Gdx.input.isKeyPressed(Input.Keys.DOWN)){
-                player1.b2body.applyLinearImpulse(new Vector2(0,-4f),player1.b2body.getWorldCenter(),true);
+                player1.setAngle(player1.getAngle()-0.1f);;
+
+//                player1.b2body.applyLinearImpulse(new Vector2(0,-4f),player1.b2body.getWorldCenter(),true);
             }
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player1.b2body.getLinearVelocity().x<=2){
                 player1.b2body.applyLinearImpulse(new Vector2(50f,0),player1.b2body.getWorldCenter(),true);
@@ -369,10 +394,16 @@ public class BattleArena implements Screen, InputProcessor {
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player1.b2body.getLinearVelocity().x>=-2){
                 player1.b2body.applyLinearImpulse(new Vector2(-100f,0),player1.b2body.getWorldCenter(),true);
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-                count++;
-                System.out.println("count1:"+count);
-                if (count==6){turn=!turn; count=0;}
+            if (Gdx.input.isKeyPressed(Input.Keys.W)){
+                Image bullet=new Image(new Texture(Gdx.files.internal("Weapons/bullet.jpg")));
+//               Vector2 force= new Vector2((float)(Math.cos()))
+               turn=!turn;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D) && player1.getPower()<=100){
+                player1.setPower(player1.getPower()+0.2f);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A) && player1.getPower()>=10){
+                player1.setPower(player1.getPower()-0.2f);
             }
 
 
@@ -381,10 +412,14 @@ public class BattleArena implements Screen, InputProcessor {
         }
         if (!turn){
             if (Gdx.input.isKeyPressed(Input.Keys.UP)){
-                player2.b2body.applyLinearImpulse(new Vector2(0,4f),player2.b2body.getWorldCenter(),true);
+//                player2.b2body.applyLinearImpulse(new Vector2(0,4f),player2.b2body.getWorldCenter(),true);
+                player2.setAngle(player2.getAngle()-0.1f);;
+
             }
             if (Gdx.input.isKeyPressed(Input.Keys.DOWN)){
-                player2.b2body.applyLinearImpulse(new Vector2(0,-4f),player2.b2body.getWorldCenter(),true);
+//                player2.b2body.applyLinearImpulse(new Vector2(0,-4f),player2.b2body.getWorldCenter(),true);
+                player2.setAngle(player2.getAngle()+0.1f);;
+
             }
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player2.b2body.getLinearVelocity().x<=2){
                 player2.b2body.applyLinearImpulse(new Vector2(50f,0),player2.b2body.getWorldCenter(),true);
@@ -394,19 +429,36 @@ public class BattleArena implements Screen, InputProcessor {
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player2.b2body.getLinearVelocity().x>=-2){
                 player2.b2body.applyLinearImpulse(new Vector2(-100f,0),player2.b2body.getWorldCenter(),true);
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-                count++;
-                System.out.println("count2:"+count);
+            if (Gdx.input.isKeyPressed(Input.Keys.S)){
 
-                if (count==6){turn=!turn; count=0;}
+                turn=!turn;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D) && player2.getPower()<=100){
+                player2.setPower(player2.getPower()-0.2f);
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A) && player2.getPower()>=10){
+                player2.setPower(player2.getPower()+0.2f);
+
             }
 
 
         }
 
+    }
+    public float trajectory(float x,float angle,float power,Tank play){
+//        x= (x+play.b2body.getPosition().x/1.98f);
+        double xtan=x*Math.tan(Math.toRadians(angle));
+        double gx2=(10*x*x)/((2*power*power)*Math.cos(Math.toRadians(angle)));
+        double y=xtan-(gx2);
+
+        y=y+ play.b2body.getPosition().y/1.848f;
+        return (float)y;
 
 
-
+    }
+    public float horizontalRange(Tank play){
+        double r=(play.getPower()* play.getPower())*Math.sin(2*(Math.toRadians(play.getAngle()))/10);
+        return (float) r;
     }
     public void update(){
         world.step(1/60f,6,2);
@@ -494,13 +546,34 @@ public class BattleArena implements Screen, InputProcessor {
             h2.setColor(Color.RED);
             h2.end();
             nh1.begin(ShapeRenderer.ShapeType.Filled);
-            nh1.rect(200f,550f,health1,15f);
+            nh1.rect(200f,550f,player1.getHealth(),15f);
             nh1.setColor(Color.GREEN);
             nh1.end();
             nh2.begin(ShapeRenderer.ShapeType.Filled);
-            nh2.rect(650f,550f,health2,15f);
+            nh2.rect(650f,550f, player2.getHealth(), 15f);
             nh2.setColor(Color.GREEN);
             nh2.end();
+            if (turn){
+                int i=0;
+                for (ShapeRenderer obj:aims){
+                    obj.begin(ShapeRenderer.ShapeType.Filled);
+//                obj.circle(i+player1.b2body.getPosition().x,400f,2f);
+                    obj.circle(50+i+player1.b2body.getPosition().x/1.98f,50+trajectory(i, player1.getAngle(), player1.getPower(), player1),2f);
+                    obj.end();
+                    i+= player1.getPower();
+                }
+            }
+            else {
+                int i=0;
+                for (ShapeRenderer obj:aims){
+                    obj.begin(ShapeRenderer.ShapeType.Filled);
+//                obj.circle(i+player1.b2body.getPosition().x,400f,2f);
+                    obj.circle(-50-i+player2.b2body.getPosition().x/1.98f,50+trajectory(-i, player2.getAngle(), player2.getPower(), player2),2f);
+                    obj.end();
+                    i+= player2.getPower();
+                }
+            }
+
         }
 
         fuel.begin(ShapeRenderer.ShapeType.Filled);

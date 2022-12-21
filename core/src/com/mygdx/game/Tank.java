@@ -19,11 +19,50 @@ public class Tank extends Sprite {
     Sprite sprite;
     Image tank1;
     Stage stage;
-    int pl;
-    public Tank(BattleArena arena,int player){
+    private int pl;
+    private float health;
+    private float angle;
+    private float power;
+
+    public int getPl() {
+        return pl;
+    }
+
+    public void setPl(int pl) {
+        this.pl = pl;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getAngle() {
+        return angle;
+    }
+
+    public void setAngle(float angle) {
+        this.angle = angle;
+    }
+
+    public float getPower() {
+        return power;
+    }
+
+    public void setPower(float power) {
+        this.power = power;
+    }
+
+    public Tank(BattleArena arena, int player){
         this.arena=arena;
         this.pl=player;
         this.world=arena.getWorld();
+        this.health=350f;
+        this.angle=45;
+        this.power=50;
         if (player==1){
 
             tank1=arena.p1tank;
@@ -31,7 +70,7 @@ public class Tank extends Sprite {
             System.out.println("player:2"+pl);
             tank1=arena.p2tank;
         }
-        tank1.setSize(50,50);
+        tank1.setSize(70,70);
 
         stage=new Stage(new ScreenViewport());
         arena.stage.addActor(tank1);
@@ -58,7 +97,7 @@ public class Tank extends Sprite {
         CircleShape shape=new CircleShape();
         shape.setRadius(10);
         fdef.shape=shape;
-        fdef.friction=0.1f;
+        fdef.friction=1.1f;
 //        fdef.
         b2body.createFixture(fdef);
     }
@@ -68,6 +107,10 @@ public class Tank extends Sprite {
 //        arena.game.batch3.end();
 
         tank1.setPosition(b2body.getPosition().x/1.98f,b2body.getPosition().y/1.848f);
+//        tank1.setPosition(b2body.getPosition().x,b2body.getPosition().y);
+//        System.out.println("x:"+b2body.getPosition().x);
+//        System.out.println("y:"+b2body.getPosition().y);
+
         stage.draw();
     }
 

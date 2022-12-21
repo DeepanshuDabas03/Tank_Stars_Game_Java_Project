@@ -36,7 +36,7 @@ import java.awt.*;
 public class MainScreen implements Screen {
     TankStars game;
 //    Sound soundgame;
-    Music soundmusic;
+    Music music;
     OrthographicCamera camera;
     Sprite sprite;
     Stage stage;
@@ -49,9 +49,10 @@ public class MainScreen implements Screen {
     ShapeRenderer bg1,bg2;
     public MainScreen(final TankStars game){
         this.game=game;
-        soundmusic=Gdx.audio.newMusic(Gdx.files.internal("Music/Menu.mp3"));
+        music=Gdx.audio.newMusic(Gdx.files.internal("Music/Menu.mp3"));
 //        sound.loop(1.0f,1.0f,1.0f);
-        soundmusic.setLooping(true);
+//        music.setLooping(true);
+        music.play();
         bg1=new ShapeRenderer();
         bg2=new ShapeRenderer();
         sprite=new Sprite(new Texture(Gdx.files.internal("MainScreen - Copy.jpg")));
@@ -179,8 +180,8 @@ public class MainScreen implements Screen {
 
     @Override
     public void show() {
-        soundmusic.setVolume(1f);
-        soundmusic.play();
+//        soundmusic.setVolume(1f);
+//        soundmusic.play();
     }
 
     @Override
@@ -239,7 +240,7 @@ public class MainScreen implements Screen {
     @Override
     public void dispose() {
         sprite.getTexture().dispose();
-        soundmusic.dispose();
+        music.dispose();
 
     }
 }
