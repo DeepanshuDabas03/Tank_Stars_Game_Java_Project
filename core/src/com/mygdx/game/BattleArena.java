@@ -52,6 +52,7 @@ public class BattleArena implements Screen, InputProcessor {
     Image p2tank=new Image(new Texture("Tanks/Abrams2.png"));
     int ismenu=0;
     int isheal=1;
+    float xfire=0;
     int isterrain=1;
     ShapeRenderer bg1;
 
@@ -75,6 +76,10 @@ public class BattleArena implements Screen, InputProcessor {
     ShapeRenderer nh1,nh2;
     ShapeRenderer fuel;
     ArrayList<ShapeRenderer> aims;
+    Bullet fire1;
+    Bullet fire2;
+    Label fuel1;
+    Label fuel2;
 
     public BattleArena(final TankStars game, int mode, int tank1, int tank2) {
         //Vsfriend
@@ -116,13 +121,15 @@ public class BattleArena implements Screen, InputProcessor {
 //        viewport.apply();
 
 //        camera.setToOrtho(false,800,400);
-        world=new World(new Vector2(0,-800),true);
+        world=new World(new Vector2(0,-10),true);
         world.setContactListener(new MyContactListener());
         b2dr=new Box2DDebugRenderer();
         vsfriendTanks(tank1,tank2);
 
         player1=new Tank(this,1);
         player2=new Tank(this,2);
+        fire1=new Bullet(player1);
+        fire2=new Bullet(player2);
 
         BodyDef bdef=new BodyDef();
         PolygonShape shape=new PolygonShape();
@@ -142,9 +149,7 @@ public class BattleArena implements Screen, InputProcessor {
 
         camera.position.set(GAME_WIDTH/2,GAME_HEIGHT/2,0);
         skin=new Skin(Gdx.files.internal("skin/glassy-ui.json"));
-        Label fueltag=new Label("Fuel",skin);
-        fueltag.setFontScale(0.6f);
-        fueltag.setPosition(80f,95f);
+
         Image menu =new Image(new Texture(Gdx.files.internal("menu.png")));
         menu.setSize(60,60);
         menu.setPosition(32,525);
@@ -213,11 +218,20 @@ public class BattleArena implements Screen, InputProcessor {
         });
 
 
-
-
-
+        Label fname1=new Label("FUEL",skin);
+        Label fname2=new Label("FUEL",skin);
+        fname1.setPosition(50,70);
+        fname2.setPosition(1000,70);
+        fuel1=new Label(Float.toString(player1.getFuel()),skin);
+        fuel2=new Label(Float.toString(player2.getFuel()),skin);
+        fuel1.setPosition(50,50);
+        fuel2.setPosition(1000,50);
+        stage.addActor(fname1);
+        stage.addActor(fname2);
+        stage.addActor(fuel1);
+        stage.addActor(fuel2);
 //        stage.addActor(terrain);
-        stage.addActor(fueltag);
+//        stage.addActor(fueltag);
 //        stage.addActor(this.p1tank);
 //        stage.addActor(this.p2tank);
         stage.addActor(menu);
@@ -257,14 +271,15 @@ public class BattleArena implements Screen, InputProcessor {
 //        viewport.apply();
 
 //        camera.setToOrtho(false,800,400);
-        world=new World(new Vector2(0,-800),true);
+        world=new World(new Vector2(0,-10),true);
         world.setContactListener(new MyContactListener());
         b2dr=new Box2DDebugRenderer();
         vscompTanks(tank1,tank2);
 
         player1=new Tank(this,1);
         player2=new Tank(this,2);
-
+        fire1=new Bullet(player1);
+        fire2=new Bullet(player2);
         BodyDef bdef=new BodyDef();
         PolygonShape shape=new PolygonShape();
         FixtureDef fdef =new FixtureDef();
@@ -355,7 +370,18 @@ public class BattleArena implements Screen, InputProcessor {
 
 
 
-
+        Label fname1=new Label("FUEL",skin);
+        Label fname2=new Label("FUEL",skin);
+        fname1.setPosition(50,70);
+        fname2.setPosition(1000,70);
+        fuel1=new Label("100",skin);
+        fuel2=new Label("100",skin);
+        fuel1.setPosition(50,50);
+        fuel2.setPosition(1000,50);
+        stage.addActor(fname1);
+        stage.addActor(fname2);
+        stage.addActor(fuel1);
+        stage.addActor(fuel2);
 
 //        stage.addActor(terrain);
         stage.addActor(fueltag);
@@ -386,17 +412,35 @@ public class BattleArena implements Screen, InputProcessor {
 
 //                player1.b2body.applyLinearImpulse(new Vector2(0,-4f),player1.b2body.getWorldCenter(),true);
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player1.b2body.getLinearVelocity().x<=2){
-                player1.b2body.applyLinearImpulse(new Vector2(50f,0),player1.b2body.getWorldCenter(),true);
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player1.b2body.getPosition().x<1900 && player1.getFuel()>0){
+                player1.b2body.applyLinearImpulse(new Vector2(10f,0),player1.b2body.getWorldCenter(),true);
+                player1.setFuel(player1.getFuel()-1f);
+                fuel1.setText(Float.toString(player1.getFuel()));
+
 
 
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player1.b2body.getLinearVelocity().x>=-2){
-                player1.b2body.applyLinearImpulse(new Vector2(-100f,0),player1.b2body.getWorldCenter(),true);
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player1.b2body.getPosition().x>2 && player1.getFuel()>0){
+                player1.b2body.applyLinearImpulse(new Vector2(-10f,0),player1.b2body.getWorldCenter(),true);
+                player1.setFuel(player1.getFuel()-1f);
+
+                fuel1.setText(Float.toString(player1.getFuel()));
+
+
             }
             if (Gdx.input.isKeyPressed(Input.Keys.W)){
-                Image bullet=new Image(new Texture(Gdx.files.internal("Weapons/bullet.jpg")));
-//               Vector2 force= new Vector2((float)(Math.cos()))
+                fire1.makebullet();
+                float range=horizontalRange(player1);
+                Vector2 force=new Vector2((float)Math.cos(Math.toRadians(player1.getAngle()))*player1.getPower(),(float)Math.sin(Math.toRadians(player1.getAngle()))*player1.getPower());
+                fire1.b2body.applyLinearImpulse(force,fire1.b2body.getWorldCenter(),true);
+                if (range+player1.b2body.getPosition().x>=player2.b2body.getPosition().x-50 && range+player1.b2body.getPosition().x<=player2.b2body.getPosition().x+50 ){
+                    player2.setHealth(player2.getHealth()-5f);
+                }
+                System.out.println("Range from player 1:"+range);
+                System.out.println("range+player1.b2body.getPosition().x:"+range+player1.b2body.getPosition().x);
+                player1.setFuel(50f);
+//                fire.update();
+
                turn=!turn;
             }
             if (Gdx.input.isKeyPressed(Input.Keys.D) && player1.getPower()<=100){
@@ -421,15 +465,29 @@ public class BattleArena implements Screen, InputProcessor {
                 player2.setAngle(player2.getAngle()+0.1f);;
 
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player2.b2body.getLinearVelocity().x<=2){
-                player2.b2body.applyLinearImpulse(new Vector2(50f,0),player2.b2body.getWorldCenter(),true);
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)  && player2.b2body.getPosition().x<1900 &&  player2.getFuel()>0){
+                player2.b2body.applyLinearImpulse(new Vector2(10f,0),player2.b2body.getWorldCenter(),true);
+                player2.setFuel(player2.getFuel()-1f);
+//                fuel2.setText(Float.toString(player2.getFuel()));
 
 
             }
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player2.b2body.getLinearVelocity().x>=-2){
-                player2.b2body.applyLinearImpulse(new Vector2(-100f,0),player2.b2body.getWorldCenter(),true);
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)  && player2.b2body.getPosition().x>2 &&  player2.getFuel()>0){
+                player2.b2body.applyLinearImpulse(new Vector2(-10f,0),player2.b2body.getWorldCenter(),true);
+                player2.setFuel(player2.getFuel()-1f);
+//                fuel2.setText(Float.toString(player2.getFuel()));
             }
             if (Gdx.input.isKeyPressed(Input.Keys.S)){
+                fire2.makebullet();
+                float range=horizontalRange(player2);
+                Vector2 force=new Vector2((float)Math.cos(Math.toRadians(player2.getAngle()))*player2.getPower()*(-1),(float)Math.sin(Math.toRadians(player2.getAngle()))*player2.getPower());
+                fire2.b2body.applyLinearImpulse(force,fire2.b2body.getWorldCenter(),true);
+                if (player2.b2body.getPosition().x+range>=player1.b2body.getPosition().x-50 &&  player2.b2body.getPosition().x+range<=player1.b2body.getPosition().x+50){
+                    player1.setHealth(player1.getHealth()-5f);
+                }
+                System.out.println("Range from player 2:"+range);
+                System.out.println("player2.b2body.getPosition().x+range:"+player2.b2body.getPosition().x+range);
+                player2.setFuel(50);
 
                 turn=!turn;
             }
@@ -448,16 +506,18 @@ public class BattleArena implements Screen, InputProcessor {
     public float trajectory(float x,float angle,float power,Tank play){
 //        x= (x+play.b2body.getPosition().x/1.98f);
         double xtan=x*Math.tan(Math.toRadians(angle));
-        double gx2=(10*x*x)/((2*power*power)*Math.cos(Math.toRadians(angle)));
+        double gx2=(20*x*x)/((2*power*power)*Math.cos(Math.toRadians(angle)));
         double y=xtan-(gx2);
 
-        y=y+ play.b2body.getPosition().y/1.848f;
         return (float)y;
 
 
     }
     public float horizontalRange(Tank play){
-        double r=(play.getPower()* play.getPower())*Math.sin(2*(Math.toRadians(play.getAngle()))/10);
+        double r=(play.getPower()* play.getPower())*Math.sin(2*(Math.toRadians(play.getAngle()))/20);
+        if (play.getPl()==2){
+            r = -r;
+        }
         return (float) r;
     }
     public void update(){
@@ -465,6 +525,12 @@ public class BattleArena implements Screen, InputProcessor {
         inputHandler();
         player1.update();
         player2.update();
+        try{
+            fire1.update();
+            fire2.update();
+
+        }
+        catch (Exception e) {System.out.println(e.getMessage());}
 
 
     }
@@ -536,6 +602,9 @@ public class BattleArena implements Screen, InputProcessor {
         }
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
+        fuel1.setText(Float.toString(player1.getFuel()));
+        fuel2.setText(Float.toString(player2.getFuel()));
+
         if (isheal==1){
             h1.begin(ShapeRenderer.ShapeType.Filled);
             h1.rect(200f,550f,350f,15f);
@@ -558,7 +627,7 @@ public class BattleArena implements Screen, InputProcessor {
                 for (ShapeRenderer obj:aims){
                     obj.begin(ShapeRenderer.ShapeType.Filled);
 //                obj.circle(i+player1.b2body.getPosition().x,400f,2f);
-                    obj.circle(50+i+player1.b2body.getPosition().x/1.98f,50+trajectory(i, player1.getAngle(), player1.getPower(), player1),2f);
+                    obj.circle(50+i+player1.b2body.getPosition().x/1.98f,50+trajectory(i, player1.getAngle(), player1.getPower(), player1)+player1.b2body.getPosition().y/1.848f,2f);
                     obj.end();
                     i+= player1.getPower();
                 }
@@ -568,7 +637,7 @@ public class BattleArena implements Screen, InputProcessor {
                 for (ShapeRenderer obj:aims){
                     obj.begin(ShapeRenderer.ShapeType.Filled);
 //                obj.circle(i+player1.b2body.getPosition().x,400f,2f);
-                    obj.circle(-50-i+player2.b2body.getPosition().x/1.98f,50+trajectory(-i, player2.getAngle(), player2.getPower(), player2),2f);
+                    obj.circle(-50-i+player2.b2body.getPosition().x/1.98f,50+trajectory(-i, player2.getAngle(), player2.getPower(), player2)+player2.b2body.getPosition().y/1.848f,2f);
                     obj.end();
                     i+= player2.getPower();
                 }
@@ -576,10 +645,7 @@ public class BattleArena implements Screen, InputProcessor {
 
         }
 
-        fuel.begin(ShapeRenderer.ShapeType.Filled);
-        fuel.rect(100,100,100,10);
-        fuel.setColor(Color.YELLOW);
-        fuel.end();
+
 
         if (ismenu==1){
             Gdx.graphics.getGL20().glEnable(GL20.GL_BLEND);

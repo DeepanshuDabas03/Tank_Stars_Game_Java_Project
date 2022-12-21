@@ -23,6 +23,15 @@ public class Tank extends Sprite {
     private float health;
     private float angle;
     private float power;
+    private  float fuel;
+
+    public float getFuel() {
+        return fuel;
+    }
+
+    public void setFuel(float fuel) {
+        this.fuel = fuel;
+    }
 
     public int getPl() {
         return pl;
@@ -63,6 +72,7 @@ public class Tank extends Sprite {
         this.health=350f;
         this.angle=45;
         this.power=50;
+        this.fuel=50;
         if (player==1){
 
             tank1=arena.p1tank;
@@ -85,21 +95,22 @@ public class Tank extends Sprite {
         bdef.type=BodyDef.BodyType.DynamicBody;
         if (this.pl==1){
 
-            bdef.position.set(200,600);
+            bdef.position.set(200,350);
         } else if (this.pl==2) {
 
 
-            bdef.position.set(1900,600);
+            bdef.position.set(1900,400);
         }
         b2body=world.createBody(bdef);
 
         FixtureDef fdef =new FixtureDef();
         CircleShape shape=new CircleShape();
-        shape.setRadius(10);
+        shape.setRadius(20);
         fdef.shape=shape;
-        fdef.friction=1.1f;
+        fdef.friction=5.1f;
+//        fdef.density=1.2f;
 //        fdef.
-        b2body.createFixture(fdef);
+        b2body.createFixture(fdef).setUserData(this);
     }
     public void update(){
 //        arena.game.batch3.begin();
